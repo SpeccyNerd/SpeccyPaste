@@ -273,36 +273,67 @@ require(["vs/editor/editor.main"], function () {
     document.getElementById("toggleSensitive")?.classList.add("hidden");
 
     fetch(`/meta/${pasteId}`)
-      .then(res => res.json())
-      .then(async (meta) => {
-        const { language, redacted, expires, passwordHash } = meta;
+    .then(async (res) => {
 
-        if (passwordHash) {
-          showPasswordOverlay(async (pw) => {
-            const res = await fetch(`/raw/${pasteId}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ password: pw }),
-            });
+      // 🔥 FIX: Treat BOTH 410 AND 404 as expired
+      if (res.status === 410 || res.status === 404) {
+        console.log("Paste expired or missing:", res.status);
 
-            if (!res.ok) throw new Error("Wrong password");
+        // Show yellow overlay
+        document.getElementById("expiredOverlay")?.classList.remove("hidden");
 
-            const code = await res.text();
-            renderEditor(code, language || "plaintext", redacted, expires);
+        // Hide toolbar
+        document.querySelector(".toolbar")?.classList.add("hidden");
+
+        // Clear editor contents
+        const editorBox = document.getElementById("editor");
+        if (editorBox) editorBox.innerHTML = "";
+
+        return; // IMPORTANT: stop processing
+      }
+
+      // If not expired and not OK, treat as error
+      if (!res.ok) {
+        throw new Error(`Meta load error ${res.status}`);
+      }
+
+      // Safe to parse meta.json
+      const meta = await res.json();
+      const { language, redacted, expires, passwordHash } = meta;
+
+      // password protected
+      if (passwordHash) {
+        showPasswordOverlay(async (pw) => {
+          const rawRes = await fetch(`/raw/${pasteId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: pw }),
           });
-        } else {
-          loadPasteContent(
-            pasteId,
-            language || "plaintext",
-            redacted || false,
-            expires
-          );
-        }
-      })
-      .catch(() => {
-        document.getElementById("editor").innerText =
-          "// Failed to load paste or incorrect password.";
-      });
+
+          if (!rawRes.ok) throw new Error("Wrong password");
+
+          const code = await rawRes.text();
+          renderEditor(code, language || "plaintext", redacted, expires);
+        });
+        return;
+      }
+
+      // Normal load
+      loadPasteContent(
+        pasteId,
+        language || "plaintext",
+        redacted || false,
+        expires
+      );
+    })
+
+    .catch((err) => {
+      console.error("Error loading paste:", err);
+      // DO NOT show fallback for expired pastes
+      const ed = document.getElementById("editor");
+      if (ed)
+        ed.innerText = "// Failed to load paste or incorrect password.";
+    });
 
     return;
   }

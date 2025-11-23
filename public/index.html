@@ -197,6 +197,22 @@
       <div class="relative flex-1 min-h-0 bg-neutral-900">
         <div id="editor" class="w-full h-full"></div>
 
+        <!-- FULL EXPIRY OVERLAY -->
+        <div id="expiredOverlay"
+             class="hidden absolute inset-0 z-50
+                    bg-yellow-400 text-neutral-900
+                    flex flex-col items-center justify-center
+                    text-center font-semibold text-xl p-6">
+            <div class="text-4xl mb-4">
+                ⚠️ Paste Expired
+            </div>
+            <p class="text-lg mb-6">This paste is no longer available.</p>
+            <a href="/"
+              class="px-4 py-2 rounded-md bg-neutral-900 text-yellow-300 hover:bg-neutral-800 text-base">
+              Go to Home
+            </a>
+        </div>
+
         <!-- Password Overlay -->
         <div id="passwordOverlay"
           class="pointer-events-auto fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur">
@@ -218,7 +234,6 @@
           </div>
         </div>
       </div>
-
     </main>
 
   </div>

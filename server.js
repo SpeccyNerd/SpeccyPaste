@@ -61,6 +61,17 @@ app.use(express.json());
 app.use(express.static('public'));
 
 
+// 🔥🔥🔥 ADD NO-CACHE HEADERS HERE (fix for expired paste not loading until refresh)
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+// 🔥🔥🔥 END NO-CACHE FIX
+
+
 // ===============================
 // CREATE NEW PASTE
 // ===============================
@@ -199,7 +210,7 @@ setInterval(() => {
 
 
 // ===============================
-// RAW VIEW (redaction-safe)
+// RAW VIEW
 // ===============================
 app.all('/raw/:id', (req, res) => {
   const id = req.params.id;
