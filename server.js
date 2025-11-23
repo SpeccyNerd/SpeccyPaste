@@ -8,6 +8,9 @@ const fetch = (...args) =>
 const app = express();
 const PORT = 3000;
 
+// IMPORT STATS ROUTER
+const statsRouter = require('./routes/stats');
+
 // DIRECTORY FOR STORED PASTES
 const pastesDir = path.join(__dirname, './pastes');
 if (!fs.existsSync(pastesDir)) fs.mkdirSync(pastesDir);
@@ -81,6 +84,13 @@ app.post('/documents', async (req, res) => {
       JSON.stringify({ created, expires, language, redacted, passwordHash })
     );
 
+    // 🔥 NEW — Append permanent stats log entry
+    const logEntry = { id, created };
+    fs.appendFileSync(
+      path.join(__dirname, 'routes', 'stats-log.jsonl'),
+      JSON.stringify(logEntry) + "\n"
+    );
+
     sendWebhook({
       eventType: "paste_created",
       title: "📄 New Paste Created",
@@ -103,7 +113,6 @@ app.post('/documents', async (req, res) => {
   }
 });
 
-
 // ===============================
 // CLEANUP (EVERY 60 sec)
 // ===============================
@@ -124,7 +133,6 @@ setInterval(() => {
       if (fs.existsSync(metaPath) && !fs.existsSync(contentPath)) {
         console.log(`[CLEANUP] Missing file for ${id}`);
 
-        // FIX: load meta BEFORE using meta.language
         const meta = JSON.parse(fs.readFileSync(metaPath));
 
         sendWebhook({
@@ -149,7 +157,6 @@ setInterval(() => {
         return;
       }
 
-      // Load metadata normally
       const meta = JSON.parse(fs.readFileSync(metaPath));
 
       // CASE 2 — Auto-expired
@@ -291,6 +298,16 @@ app.post('/validate-password/:id', (req, res) => {
 app.get('/p/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+
+// ===============================
+// STATS ROUTE
+// ===============================
+app.use('/stats', (req, res, next) => {
+  console.log("Stats page is running");
+  next();
+});
+app.use('/stats', statsRouter);
 
 
 // ===============================
