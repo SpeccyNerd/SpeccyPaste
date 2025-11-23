@@ -12,121 +12,50 @@ function copyToClipboard(text) {
     try {
       document.execCommand("copy");
     } catch (err) {
-      console.error("Fallback clipboard error:", err);
+      console.error("Clipboard error:", err);
     }
     document.body.removeChild(textArea);
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const saveBtn = document.getElementById("saveBtn");
-  const mobileSaveBtn = document.getElementById("mobileSaveBtn");
   const shareBtn = document.getElementById("shareBtn");
-  const copyBtn = document.getElementById("copyBtn");
   const rawBtn = document.getElementById("rawBtn");
-  const shareMenu = document.getElementById("shareMenu");
-  const copyLinkBtn = document.getElementById("copyLinkBtn");
-  const qrCodeBtn = document.getElementById("qrCodeBtn");
+  const copyBtn = document.getElementById("copyBtn");
 
+  // ===== COPY BUTTON (copies editor content) =====
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
       const content = monacoEditor.getValue();
       copyToClipboard(content);
-      alert("Copied!");
+      alert("Content copied!");
     });
   }
 
-  async function createAndSharePaste() {
-    let content = monacoEditor.getValue();
-    const expiry = parseInt(document.getElementById("expiry").value);
-    const lang = document.getElementById("language").value;
-    const redacted = window.__hideSensitive__ || false;
+  // ===== SHARE BUTTON (copy URL to clipboard) =====
+  if (shareBtn) {
+    shareBtn.addEventListener("click", () => {
+      const url = window.location.href;
+      copyToClipboard(url);
 
-    try {
-      const password = document.getElementById("pastePassword")?.value?.trim();
-
-      const res = await fetch("/documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content,
-          expiry,
-          language: lang,
-          redacted,
-          password: password || undefined
-        })
-      });
-
-      const text = await res.text();
-
-      if (!res.ok) {
-        console.error("Server Error:", text);
-        throw new Error("Server responded with error");
-      }
-
-      const data = JSON.parse(text);
-      const url = `/p/${data.key}`;
-      copyToClipboard(`${window.location.origin}${url}`);
-      window.location.href = url;
-    } catch (err) {
-      console.error("❌ Error saving paste:", err);
-      alert("Failed to save paste. Check browser console.");
-    }
-  }
-
-  // Shared listener
-  document.getElementById("saveBtn")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    createAndSharePaste();
-  });
-
-  document.getElementById("mobileSaveBtn")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    createAndSharePaste();
-  });
-
-  if (shareBtn && shareMenu) {
-    shareBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      shareMenu.classList.toggle("hidden");
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!shareMenu.contains(e.target) && e.target !== shareBtn) {
-        shareMenu.classList.add("hidden");
+      // Show toast if exists
+      const toast = document.getElementById("toast");
+      if (toast) {
+        toast.textContent = "Link copied!";
+        toast.classList.remove("hidden");
+        setTimeout(() => toast.classList.add("hidden"), 1800);
+      } else {
+        alert("Copied link!");
       }
     });
   }
 
-  if (copyLinkBtn) {
-    copyLinkBtn.addEventListener("click", () => {
-      if (pasteId) {
-        const url = `${window.location.origin}/p/${pasteId}`;
-        copyToClipboard(url);
-        alert("Copied share link!");
-      }
-      shareMenu.classList.add("hidden");
-    });
-  }
-
-  if (qrCodeBtn) {
-    qrCodeBtn.addEventListener("click", () => {
-      if (!pasteId) return;
-      const url = `${window.location.origin}/p/${pasteId}`;
-      window.open(`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=200x200`, '_blank');
-      shareMenu.classList.add("hidden");
-    });
-  }
-
+  // ===== RAW VIEW BUTTON =====
   if (rawBtn) {
     rawBtn.addEventListener("click", () => {
       if (typeof pasteId !== "undefined" && pasteId) {
-        window.open(`/raw/${pasteId}`, '_blank');
+        window.open(`/raw/${pasteId}`, "_blank");
       }
     });
   }
-
-
-
-  // 🔥 Removed: Redaction toggle logic — handled by editor-init.js only
 });
