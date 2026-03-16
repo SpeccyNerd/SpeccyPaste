@@ -35,4 +35,4 @@
 
 | Desktop View | Mobile View |
 |--------------|-------------|
-| ![Desktop](https://your-image-link.com/desktop.png) | ![Mobile](https://your-image-link.com/mobile.png) |
+| ![Desktop](https://i.postimg.cc/76Qvd1K8/Screenshot-2026-03-16-030053.png) | ![Mobile]([https://your-image-link.com/mobile.png](https://i.postimg.cc/j519ZxSk/msedge-Fs-KPT46LV3.gif)) |
